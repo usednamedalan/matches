@@ -2,200 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Football Matches | Next 14 Days</title>
+  <title>Football Center</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    :root {
-      --bg: #0f172a;
-      --card: #111827;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --accent: #38bdf8;
-      --green: #22c55e;
-      --red: #ef4444;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: Inter, system-ui, sans-serif;
-      background: linear-gradient(180deg, #020617, var(--bg));
-      color: var(--text);
-    }
-
-    header {
-      padding: 20px;
-      border-bottom: 1px solid #1f2933;
-    }
-
-    header h1 {
-      margin: 0 0 10px;
-      font-size: 1.4rem;
-    }
-
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    select, input {
-      background: var(--card);
-      color: var(--text);
-      border: 1px solid #1f2937;
-      padding: 10px 12px;
-      border-radius: 8px;
-      outline: none;
-    }
-
-    main {
-      padding: 20px;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 16px;
-    }
-
-    .match {
-      background: var(--card);
-      border: 1px solid #1f2937;
-      border-radius: 14px;
-      padding: 14px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    }
-
-    .league {
-      font-size: 0.8rem;
-      color: var(--accent);
-      margin-bottom: 6px;
-    }
-
-    .teams {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-weight: 600;
-    }
-
-    .score {
-      font-size: 1.2rem;
-      margin: 8px 0;
-    }
-
-    .time {
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-
-    .rating {
-      margin-top: 10px;
-      height: 6px;
-      background: #1f2937;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-
-    .rating > div {
-      height: 100%;
-      background: linear-gradient(90deg, var(--red), var(--green));
-    }
-
-    footer {
-      text-align: center;
-      padding: 20px;
-      color: var(--muted);
-      font-size: 0.75rem;
-    }
-  </style>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
+
 <body>
+  <!-- SIDEBAR (DESKTOP) -->
+  <aside class="sidebar">
+    <h2 class="logo">⚽ Football</h2>
+    <nav>
+      <button data-page="matches">Matches</button>
+      <button data-page="live">Live</button>
+      <button data-page="team">Team</button>
+      <button data-page="table">Table</button>
+      <button data-page="players">Players</button>
+    </nav>
 
-<header>
-  <h1>Football Matches – Next 14 Days</h1>
-  <div class="controls">
-    <select id="leagueSelect">
-      <option value="">All Leagues</option>
-      <option value="39">Premier League</option>
-      <option value="140">La Liga</option>
-      <option value="61">Ligue 1</option>
-      <option value="78">Bundesliga</option>
-    </select>
+    <div class="theme-toggle">
+      <span>🌙</span>
+      <input type="checkbox" id="themeToggle" />
+    </div>
+  </aside>
 
-    <input id="teamInput" placeholder="Filter by team name" />
-  </div>
-</header>
+  <!-- MAIN CONTENT -->
+  <main id="app">
+    <div id="loader" class="loader hidden"></div>
+    <div id="error" class="error hidden"></div>
+    <section id="content"></section>
+  </main>
 
-<main id="matches"></main>
+  <!-- BOTTOM NAV (MOBILE) -->
+  <nav class="bottom-nav">
+    <button data-page="matches">🏟</button>
+    <button data-page="live">🔴</button>
+    <button data-page="team">👕</button>
+    <button data-page="table">📊</button>
+    <button data-page="players">⭐</button>
+  </nav>
 
-<footer>
-  Data powered by API-Football · Ratings are illustrative
-</footer>
-
-<script>
-  const API_KEY = "32a94097e144fbded05a2537984eb315"; // api-football.com
-  const container = document.getElementById("matches");
-  const leagueSelect = document.getElementById("leagueSelect");
-  const teamInput = document.getElementById("teamInput");
-
-  async function loadMatches() {
-    container.innerHTML = "";
-
-    const today = new Date();
-    const to = new Date();
-    to.setDate(today.getDate() + 14);
-
-    const fromStr = today.toISOString().split("T")[0];
-    const toStr = to.toISOString().split("T")[0];
-
-    let url = `https://v3.football.api-sports.io/fixtures?from=${fromStr}&to=${toStr}`;
-
-    if (leagueSelect.value) {
-      url += `&league=${leagueSelect.value}&season=2025`;
-    }
-
-    const res = await fetch(url, {
-      headers: { "x-apisports-key": API_KEY }
-    });
-
-    const data = await res.json();
-
-    const teamFilter = teamInput.value.toLowerCase();
-
-    data.response
-      .filter(m => !teamFilter ||
-        m.teams.home.name.toLowerCase().includes(teamFilter) ||
-        m.teams.away.name.toLowerCase().includes(teamFilter)
-      )
-      .forEach(m => {
-        const rating = Math.floor(Math.random() * 40) + 60; // fotmob-style placeholder
-
-        const div = document.createElement("div");
-        div.className = "match";
-        div.innerHTML = `
-          <div class="league">${m.league.name}</div>
-          <div class="teams">
-            <span>${m.teams.home.name}</span>
-            <span>${m.teams.away.name}</span>
-          </div>
-          <div class="score">
-            ${m.goals.home ?? "–"} : ${m.goals.away ?? "–"}
-          </div>
-          <div class="time">
-            ${new Date(m.fixture.date).toLocaleString()}
-          </div>
-          <div class="rating">
-            <div style="width:${rating}%"></div>
-          </div>
-        `;
-        container.appendChild(div);
-      });
-  }
-
-  leagueSelect.addEventListener("change", loadMatches);
-  teamInput.addEventListener("input", loadMatches);
-
-  loadMatches();
-</script>
-
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
