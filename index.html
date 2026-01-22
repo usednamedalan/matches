@@ -1,36 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Football Stats</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="css/style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Dash</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-  <aside class="sidebar">
-    <h2 class="logo">⚽ Football</h2>
 
-    <input type="text" id="teamSearch" placeholder="Search team..." />
+    <header class="navbar">
+        <div class="logo" onclick="showPage('home')">FOOTBALL<span>DASH</span></div>
+        <div class="search-bar">
+            <input type="text" id="teamSearch" placeholder="Search for a club (e.g. Real Madrid)...">
+            <button onclick="searchTeam()"><i class="fas fa-search"></i></button>
+        </div>
+        <nav>
+            <a href="#" onclick="showPage('home')">Matches</a>
+            <a href="#" onclick="showPage('transfers-page')">Transfers</a>
+        </nav>
+    </header>
 
-    <nav>
-      <button data-page="matches">Matches</button>
-      <button data-page="tables">Tables</button>
-      <button data-page="statistics">Statistics</button>
-    </nav>
+    <main class="container">
+        <aside class="left-sidebar">
+            <h3>Top Leagues</h3>
+            <ul id="league-list">
+                <li onclick="filterLeague(39)"><img src="https://media.api-sports.io/football/leagues/39.png" width="20"> Premier League</li>
+                <li onclick="filterLeague(140)"><img src="https://media.api-sports.io/football/leagues/140.png" width="20"> La Liga</li>
+                <li onclick="filterLeague(78)"><img src="https://media.api-sports.io/football/leagues/78.png" width="20"> Bundesliga</li>
+                <li onclick="filterLeague(135)"><img src="https://media.api-sports.io/football/leagues/135.png" width="20"> Serie A</li>
+                <li onclick="filterLeague(61)"><img src="https://media.api-sports.io/football/leagues/61.png" width="20"> Ligue 1</li>
+                <li onclick="filterLeague(2)"><img src="https://media.api-sports.io/football/leagues/2.png" width="20"> Champions League</li>
+            </ul>
+        </aside>
 
-    <div class="theme-toggle">
-      <span>🌙</span>
-      <input type="checkbox" id="themeToggle" />
-    </div>
-  </aside>
+        <section class="main-content" id="main-view">
+            <div id="home-page">
+                <div class="date-nav">
+                    <button onclick="changeDate(-1)"><i class="fas fa-chevron-left"></i></button>
+                    <h2 id="current-date-display">Today</h2>
+                    <button onclick="changeDate(1)"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div id="match-list" class="match-list">
+                    <p class="loader">Loading matches...</p>
+                </div>
+            </div>
 
-  <main id="app">
-    <div id="loader" class="loader hidden"></div>
-    <div id="error" class="error hidden"></div>
-    <section id="content"></section>
-  </main>
+            <div id="team-page" style="display:none;">
+                </div>
 
-  <script src="js/api.js"></script>
-  <script src="js/app.js"></script>
+            <div id="transfers-page" style="display:none;">
+                <h2>Top 5 League Transfers</h2>
+                <div id="full-transfers-list"></div>
+            </div>
+        </section>
+
+        <aside class="right-sidebar">
+            <h3 onclick="showPage('transfers-page')" style="cursor:pointer">TRANSFERS <i class="fas fa-external-link-alt" style="font-size: 12px;"></i></h3>
+            <div id="recent-transfers">
+                </div>
+        </aside>
+    </main>
+
+    <script src="script.js"></script>
 </body>
 </html>
