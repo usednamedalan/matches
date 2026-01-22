@@ -1,30 +1,223 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Footy Site</title>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FotMob Lite</title>
+    <style>
+        :root {
+            --bg: #f4f4f9;
+            --card: #ffffff;
+            --primary: #121212;
+            --secondary: #606060;
+            --accent: #00d632; /* FotMob Green */
+            --border: #ececec;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--primary);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+        }
+
+        /* Search Header */
+        .header {
+            background: var(--card);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            flex: 1;
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        button {
+            background: var(--accent);
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* Match Card */
+        .box {
+            background: var(--card);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .box:active { transform: scale(0.98); }
+
+        .row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tm {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .tm img { width: 24px; height: 24px; margin: 0 10px; }
+
+        .tm.home { justify-content: flex-end; text-align: right; }
+        .tm.away { justify-content: flex-start; text-align: left; }
+
+        .sc {
+            width: 60px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 18px;
+            background: #f0f0f0;
+            padding: 5px 0;
+            border-radius: 6px;
+            margin: 0 15px;
+        }
+
+        /* Events Section */
+        .ev {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--secondary);
+        }
+
+        .ev-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .ev-item { margin-bottom: 4px; }
+        .ev-home { text-align: right; }
+        .ev-away { text-align: left; }
+
+        .loading { text-align: center; padding: 20px; color: var(--secondary); }
+    </style>
 </head>
 <body>
 
-    <div class="H">
-        <h1>made by alan</h1>
+<div id="app">
+    <div class="header">
+        <input type="text" id="dtInp" placeholder="2026-01-22">
+        <button onclick="U()">Search</button>
     </div>
+    <div id="m-box"></div>
+</div>
 
-    <div class="C">
-        <div class="D">
-            <button onclick="B()">Back</button>
-            <div class="T">
-                <h2 id="day">Today</h2>
-                <p id="dt"></p>
-            </div>
-            <button onclick="F()">Next</button>
-        </div>
+<script>
+var key = '32a94097e144fbded05a2537984eb315';
 
-        <div id="m-box">
-            <p>Loading...</p>
-        </div>
-    </div>
+function U() {
+    var s = document.getElementById('dtInp').value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return alert("Format: YYYY-MM-DD");
+    G(s);
+}
 
-    <script src="script.js"></script>
+function G(s) {
+    var div = document.getElementById('m-box');
+    div.innerHTML = '<div class="loading">Loading matches...</div>';
+
+    fetch('https://v3.football.api-sports.io/fixtures?date=' + s, {
+        headers: { 'x-apisports-key': key }
+    })
+    .then(r => r.json())
+    .then(res => {
+        var x = res.response;
+        var h = "";
+        var ids = [39, 140, 78, 135, 61, 2, 94, 88, 71, 253]; 
+
+        var filtered = x.filter(m => ids.includes(m.league.id));
+        
+        if (filtered.length === 0) {
+            div.innerHTML = "";
+            return;
+        }
+
+        filtered.forEach(m => {
+            h += `
+            <div class="box" onclick="E(${m.fixture.id})">
+                <div class="row">
+                    <div class="tm home">${m.teams.home.name} <img src="${m.teams.home.logo}"></div>
+                    <div class="sc">${m.goals.home ?? 0}:${m.goals.away ?? 0}</div>
+                    <div class="tm away"><img src="${m.teams.away.logo}"> ${m.teams.away.name}</div>
+                </div>
+                <div class="ev" id="e${m.fixture.id}"></div>
+            </div>`;
+        });
+        div.innerHTML = h;
+    });
+}
+
+function E(id) {
+    var eDiv = document.getElementById('e' + id);
+    if (eDiv.style.display == 'block') return eDiv.style.display = 'none';
+    
+    eDiv.innerHTML = "Checking goals...";
+    eDiv.style.display = 'block';
+
+    fetch('https://v3.football.api-sports.io/fixtures?id=' + id, { headers: { 'x-apisports-key': key } })
+    .then(r => r.json())
+    .then(fRes => {
+        var homeId = fRes.response[0].teams.home.id;
+
+        fetch('https://v3.football.api-sports.io/fixtures/events?fixture=' + id, { headers: { 'x-apisports-key': key } })
+        .then(r => r.json())
+        .then(res => {
+            var evs = res.response;
+            var hG = "", aG = "";
+
+            evs.forEach(e => {
+                if (e.type === "Goal") {
+                    var t = e.time.elapsed + (e.time.extra ? '+' + e.time.extra : "");
+                    var p = e.player.name || "Unknown";
+                    var detail = e.detail === "Own Goal" ? " (OG)" : "";
+                    var item = `<div class="ev-item"><strong>${t}'</strong> ${p}${detail}</div>`;
+                    
+                    if (e.team.id === homeId) hG += item;
+                    else aG += item;
+                }
+            });
+
+            eDiv.innerHTML = `
+                <div class="ev-grid">
+                    <div class="ev-home">${hG || "--"}</div>
+                    <div class="ev-away">${aG || "--"}</div>
+                </div>`;
+        });
+    });
+}
+</script>
+
 </body>
 </html>
