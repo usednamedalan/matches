@@ -1,126 +1,92 @@
-const API_KEY = '32a94097e144fbded05a2537984eb315';
-const BASE_URL = 'https://v3.football.api-sports.io';
+var myKey = '32a94097e144fbded05a2537984eb315';
+var myDate = new Date();
 
-let currentDate = new Date();
+function update() {
+    var y = myDate.getFullYear();
+    var m = myDate.getMonth() + 1;
+    var d = myDate.getDate();
 
-// Initialize the app
-document.addEventListener('DOMContentLoaded', () => {
-    fetchMatches(currentDate);
-    fetchTopTransfers();
-});
+    if (m < 10) m = '0' + m;
+    if (d < 10) d = '0' + d;
 
-// Navigation Logic
-function showPage(pageId) {
-    document.getElementById('home-page').style.display = pageId === 'home' ? 'block' : 'none';
-    document.getElementById('team-page').style.display = pageId === 'team-page' ? 'block' : 'none';
-    document.getElementById('transfers-page').style.display = pageId === 'transfers-page' ? 'block' : 'none';
-}
-
-// Fetch Matches
-async function fetchMatches(date) {
-    const formattedDate = date.toISOString().split('T')[0];
-    document.getElementById('current-date-display').innerText = formattedDate;
+    var format = y + '-' + m + '-' + d;
+    document.getElementById('fullDate').innerHTML = format;
     
-    const response = await fetch(`${BASE_URL}/fixtures?date=${formattedDate}`, {
-        headers: { 'x-apisports-key': API_KEY }
-    });
-    const data = await response.json();
-    displayMatches(data.response);
+    getMatches(format);
 }
 
-function displayMatches(matches) {
-    const container = document.getElementById('match-list');
-    container.innerHTML = '';
+function goBack() {
+    myDate.setDate(myDate.getDate() - 1);
+    document.getElementById('dayText').innerHTML = "Previous";
+    update();
+}
 
-    // Filter for Top 5 Leagues only (IDs: 39, 140, 78, 135, 61, 2)
-    const topLeagues = [39, 140, 78, 135, 61, 2];
-    const filtered = matches.filter(m => topLeagues.includes(m.league.id));
+function goForward() {
+    myDate.setDate(myDate.getDate() + 1);
+    document.getElementById('dayText').innerHTML = "Future";
+    update();
+}
 
-    if (filtered.length === 0) {
-        container.innerHTML = '<p>No major league matches today.</p>';
+function getMatches(dateString) {
+    var box = document.getElementById('matches-container');
+    box.innerHTML = "Loading matches...";
+
+    fetch('https://v3.football.api-sports.io/fixtures?date=' + dateString, {
+        headers: { 'x-apisports-key': myKey }
+    })
+    .then(res => res.json())
+    .then(data => {
+        var list = data.response;
+        var html = "";
+
+        var topLeagues = [39, 140, 78, 135, 61, 2];
+
+        for (var i = 0; i < list.length; i++) {
+            var m = list[i];
+            
+            if (topLeagues.includes(m.league.id)) {
+                html += '<div class="match-box" onclick="getEvents(' + m.fixture.id + ')">';
+                html += '<div class="main-row">';
+                html += '<div class="team" style="justify-content: flex-end">' + m.teams.home.name + ' <img src="' + m.teams.home.logo + '"></div>';
+                html += '<div class="score">' + (m.goals.home ?? 0) + ' - ' + (m.goals.away ?? 0) + '</div>';
+                html += '<div class="team"><img src="' + m.teams.away.logo + '"> ' + m.teams.away.name + '</div>';
+                html += '</div>';
+                html += '<div class="scorers" id="s-' + m.fixture.id + '"></div>';
+                html += '</div>';
+            }
+        }
+        
+        if (html == "") html = "No matches found for top leagues.";
+        box.innerHTML = html;
+    });
+}
+
+function getEvents(id) {
+    var sBox = document.getElementById('s-' + id);
+    
+    if (sBox.classList.contains('active')) {
+        sBox.classList.remove('active');
         return;
     }
 
-    filtered.forEach(m => {
-        container.innerHTML += `
-            <div class="match-card">
-                <div class="team-info">
-                    <img src="${m.teams.home.logo}" width="25">
-                    <span>${m.teams.home.name}</span>
-                </div>
-                <div class="score">
-                    ${m.goals.home ?? ''} - ${m.goals.away ?? 'vs'}
-                </div>
-                <div class="team-info away">
-                    <span>${m.teams.away.name}</span>
-                    <img src="${m.teams.away.logo}" width="25">
-                </div>
-            </div>
-        `;
+    sBox.innerHTML = "Loading scorers...";
+    sBox.classList.add('active');
+
+    fetch('https://v3.football.api-sports.io/fixtures/events?fixture=' + id, {
+        headers: { 'x-apisports-key': myKey }
+    })
+    .then(res => res.json())
+    .then(data => {
+        var ev = data.response;
+        var goalList = "";
+        for (var j = 0; j < ev.length; j++) {
+            if (ev[j].type == "Goal") {
+                goalList += "Goal: " + ev[j].player.name + " (" + ev[j].time.elapsed + "') Assist: " + (ev[j].assist.name ?? "None") + "<br>";
+            }
+        }
+        if (goalList == "") goalList = "No goals.";
+        sBox.innerHTML = goalList;
     });
 }
 
-// Date Navigation
-function changeDate(days) {
-    currentDate.setDate(currentDate.getDate() + days);
-    fetchMatches(currentDate);
-}
-
-// Search Team
-async function searchTeam() {
-    const query = document.getElementById('teamSearch').value;
-    if (!query) return;
-
-    const response = await fetch(`${BASE_URL}/teams?search=${query}`, {
-        headers: { 'x-apisports-key': API_KEY }
-    });
-    const data = await response.json();
-    
-    if (data.response.length > 0) {
-        displayTeamPage(data.response[0].team.id);
-    } else {
-        alert("Team not found!");
-    }
-}
-
-async function displayTeamPage(teamId) {
-    showPage('team-page');
-    const container = document.getElementById('team-page');
-    container.innerHTML = 'Loading team details...';
-
-    // In a real app, you'd fetch standings, last 5 matches, and squad here.
-    // Example layout for Team Page:
-    const res = await fetch(`${BASE_URL}/teams?id=${teamId}`, { headers: { 'x-apisports-key': API_KEY } });
-    const teamData = await res.json();
-    const team = teamData.response[0].team;
-
-    container.innerHTML = `
-        <div class="team-header">
-            <img src="${team.logo}" width="80">
-            <h1>${team.name}</h1>
-            <p>${team.country}</p>
-        </div>
-        <h3>Recent Form & Standings (Placeholders)</h3>
-        <p>Current Rank: 1st (Sample Data)</p>
-    `;
-}
-
-// Transfers (Simplified)
-async function fetchTopTransfers() {
-    // API-Football has a specific transfers endpoint
-    const response = await fetch(`${BASE_URL}/transfers?league=39&season=2025`, {
-        headers: { 'x-apisports-key': API_KEY }
-    });
-    const data = await response.json();
-    const recent = data.response.slice(0, 5);
-    
-    const container = document.getElementById('recent-transfers');
-    recent.forEach(t => {
-        container.innerHTML += `
-            <div class="transfer-item">
-                <strong>${t.player.name}</strong><br>
-                ${t.transfers[0].teams.out.name} ➔ ${t.transfers[0].teams.in.name}
-            </div>
-        `;
-    });
-}
+update();
