@@ -70,7 +70,7 @@ function E(id) {
         return;
     }
 
-    eDiv.innerHTML = "loading...";
+    eDiv.innerHTML = "Fetching events...";
     eDiv.style.display = 'block';
 
     fetch('https://v3.football.api-sports.io/fixtures/events?fixture=' + id, {
@@ -80,12 +80,27 @@ function E(id) {
     .then(res => {
         var data = res.response;
         var txt = "";
+
+        if (!data || data.length === 0) {
+            eDiv.innerHTML = "No major events recorded.";
+            return;
+        }
+
         for (var i = 0; i < data.length; i++) {
-            if (data[i].type == "Goal") {
-                txt += data[i].time.elapsed + "' Goal: " + data[i].player.name + "<br>";
+            var ev = data[i];
+            if (ev.type === "Goal") {
+                var time = ev.time.elapsed + (ev.time.extra ? '+' + ev.time.extra : "");
+                var scorer = ev.player.name || "Unknown Player";
+                var assist = ev.assist.name ? " (Assist: " + ev.assist.name + ")" : "";
+                var detail = ev.detail === "Own Goal" ? " [OG]" : "";
+                txt += `<strong>${time}'</strong> Goal: ${scorer}${detail}${assist}<br>`;
             }
         }
-        eDiv.innerHTML = txt || "No goals found.";
+        eDiv.innerHTML = txt || "No goals recorded yet.";
+    })
+    .catch(err => {
+        eDiv.innerHTML = "Error loading events.";
+        console.error(err);
     });
 }
 
