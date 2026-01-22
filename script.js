@@ -1,4 +1,4 @@
-const key = '32a94097e144fbded05a2537984eb315';
+const key = 'da384c1dbf880f63dd8e398cbb3d6471';
 const apiBase = 'https://v3.football.api-sports.io';
 const headers = { 'x-apisports-key': key };
 
