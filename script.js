@@ -1,80 +1,82 @@
-const API_KEY = '54SxQNR5EHjCMTWe';
-const API_SECRET = 'EU606jiKxvOfaCGfHyMxlEC0mWD8Qznu'; // MUST add your secret from live-score-api.com
+const a = '54SxQNR5EHjCMTWe';
+const b = 'EU606jiKxvOfaCGfHyMxlEC0mWD8Qznu';
+
+const c = [
+    'Premier League',
+    'La Liga',
+    'Serie A',
+    'Bundesliga',
+    'Ligue 1'
+];
 
 async function getMatches() {
-    const date = document.getElementById('dateInput').value;
-    const container = document.getElementById('matches-container');
-    
-    // Live-score API endpoint for fixtures
-    const url = `https://livescore-api.com/api-client/fixtures/matches.json?key=${API_KEY}&secret=${API_SECRET}&date=${date}`;
+    const d = document.getElementById('dateInput').value;
+    const e = document.getElementById('matches-container');
 
-    container.innerHTML = '<div style="text-align:center">Loading...</div>';
+    const f = `https://livescore-api.com/api-client/fixtures/matches.json?key=${a}&secret=${b}&date=${d}`;
+
+    e.innerHTML = '<div style="text-align:center">Loading...</div>';
 
     try {
-        const response = await fetch(url);
-        const resData = await response.json();
-        
-        if (!resData.success) {
-            container.innerHTML = `<div style="color:red">API Error: ${resData.error || 'Check your Secret Key'}</div>`;
-            return;
-        }
+        const g = await fetch(f);
+        const h = await g.json();
+        if (!h.success) { e.innerHTML = ''; return; }
 
-        const matches = resData.data.fixtures;
+        const i = h.data.fixtures.filter(j => c.includes(j.competition_name));
 
-        container.innerHTML = matches.map(m => {
-            const isLive = m.status === 'LIVE' || m.status === 'IN PLAY';
-            const score = m.score ? m.score : (m.time ? m.time.substring(0,5) : 'VS');
+        e.innerHTML = i.map(j => {
+            const k = j.status === 'LIVE' || j.status === 'IN PLAY';
+            const l = j.score ? j.score : (j.time ? j.time.substring(0,5) : 'VS');
 
             return `
-            <div class="match-card" onclick="toggleEvents(${m.id})">
-                <div class="league-name">${m.competition_name}</div>
+            <div class="match-card" onclick="toggleEvents(${j.id})">
+                <div class="league-name">${j.competition_name}</div>
                 <div class="row">
-                    <div class="team home">${m.home_name}</div>
+                    <div class="team home">${j.home_name}</div>
                     <div class="score-box">
-                        <div style="${isLive ? 'color:var(--accent)' : ''}">${score}</div>
-                        ${isLive ? `<div class="live-mark"><span class="red-dot"></span> LIVE</div>` : ''}
+                        <div style="${k ? 'color:var(--accent)' : ''}">${l}</div>
+                        ${k ? `<div class="live-mark"><span class="red-dot"></span> LIVE</div>` : ''}
                     </div>
-                    <div class="team away">${m.away_name}</div>
+                    <div class="team away">${j.away_name}</div>
                 </div>
-                <div class="events-panel" id="events-${m.id}"></div>
+                <div class="events-panel" id="events-${j.id}"></div>
             </div>`;
         }).join('');
-    } catch (err) {
-        container.innerHTML = "Connection failed.";
+    } catch {
+        e.innerHTML = '';
     }
 }
 
-async function toggleEvents(matchId) {
-    const panel = document.getElementById(`events-${matchId}`);
-    if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+async function toggleEvents(a1) {
+    const b1 = document.getElementById(`events-${a1}`);
+    if (b1.style.display === 'block') { b1.style.display = 'none'; return; }
 
-    panel.style.display = 'block';
-    panel.innerHTML = "Fetching goalscorers...";
+    b1.style.display = 'block';
+    b1.innerHTML = 'Loading';
 
-    const url = `https://livescore-api.com/api-client/scores/events.json?key=${API_KEY}&secret=${API_SECRET}&id=${matchId}`;
+    const c1 = `https://livescore-api.com/api-client/scores/events.json?key=${a}&secret=${b}&id=${a1}`;
 
     try {
-        const response = await fetch(url);
-        const resData = await response.json();
-        const events = resData.data.event;
+        const d1 = await fetch(c1);
+        const e1 = await d1.json();
+        const f1 = e1.data.event || [];
 
-        let homeH = "", awayH = "";
+        let g1 = '', h1 = '';
 
-        events.forEach(ev => {
-            if (ev.event === "GOAL") {
-                const line = `<div class="ev-item"><strong>${ev.time}'</strong> ${ev.player}</div>`;
-                // Live-score API identifies team side by 'home' or 'away' string
-                if (ev.home_away === "home") homeH += line;
-                else awayH += line;
+        f1.forEach(i1 => {
+            if (i1.event === 'GOAL') {
+                const j1 = `<div class="ev-item"><strong>${i1.time}'</strong> ${i1.player}</div>`;
+                if (i1.home_away === 'home') g1 += j1;
+                else h1 += j1;
             }
         });
 
-        panel.innerHTML = `
-            <div class="events-grid">
-                <div class="ev-home">${homeH || "--"}</div>
-                <div class="ev-away">${awayH || "--"}</div>
-            </div>`;
-    } catch (e) {
-        panel.innerHTML = "No goal data found.";
+        b1.innerHTML = `
+        <div class="events-grid">
+            <div class="ev-home">${g1 || '--'}</div>
+            <div class="ev-away">${h1 || '--'}</div>
+        </div>`;
+    } catch {
+        b1.innerHTML = '--';
     }
 }
